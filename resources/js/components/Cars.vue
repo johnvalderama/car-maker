@@ -7,12 +7,18 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="exampleModalLabel">Add Car</h5>
+                  <h5 class="modal-title" id="exampleModalLabel">{{ isAddMode? 'Add Car' : 'Edit Car' }}</h5>
                   <button type="button" class="close" @click="showCarModal = false" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
                 <div class="modal-body">
+                  <p class="text-danger" v-if="errors.length">
+                    <b>Please correct the following error(s):</b>
+                    <ul>
+                      <li v-for="error in errors">{{ error }}</li>
+                    </ul>
+                  </p>
                   <form>
                     <div class="form-group">
                       <input type="text" class="form-control" v-model="form.carName" placeholder="Car Name">
@@ -91,7 +97,8 @@ export default {
               carColor: ''
             },
             showCarModal: false,
-            isAddMode: true
+            isAddMode: true,
+            errors: []
         }
     },
     async beforeRouteEnter(to, from, next) {
@@ -134,11 +141,24 @@ export default {
         this.showCarModal = true;
       },
       async saveCar() {
-        await this.CreateCar({
+        this.errors = [];
+
+        let response = await this.CreateCar({
           car: this.form,
           isAddMode: this.isAddMode
         });
-        this.showCarModal = false;
+
+        if (response.status != 200 && response.data) {
+          if (response.data.errors) {
+            for (const [key, values] of Object.entries(response.data.errors)) {
+              this.errors.push(...values);
+            }
+          } else if (response.data.message) {
+            this.errors.push(response.data.message);
+          }
+        } else {
+          this.showCarModal = false;
+        }
       },
       async deleteCar(carId) {
         await this.DeleteCar(carId);

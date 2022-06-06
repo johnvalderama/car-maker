@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const state = {
+  accessToken: null,
   user: null,
   cars: [],
   manufacturers: [],
@@ -9,7 +10,8 @@ const state = {
 };
 
 const getters = {
-  isAuthenticated: state => !!state.user,    
+  isAuthenticated: state => !!state.accessToken,
+  StateAccessToken: state => state.accessToken,
   StateCars: state => state.cars,
   StateUser: state => state.user,
   StateManufacturers: state => state.manufacturers,
@@ -19,88 +21,162 @@ const getters = {
 
 const actions = {
   async LogIn({commit}, user) {
-    let response = await axios.post('api/login', user)
-    await commit('setUser', response.data.user)
+    let response = null;
+    try {
+      response = await axios.post('api/login', user)
+    } catch(error) {
+      response = error.response;
+    }
+    if (response.status == 200) {
+      await commit('setAccessToken', response.data.access_token)
+      await commit('setUser', response.data.user)
+    }
     return response
   },
-  async LogOut({commit}){
-    await axios.post('api/logout')
+  async LogOut({commit, state}){
+    await axios.post('api/logout', null, {
+      headers: {
+        Authorization: 'Bearer ' + state.accessToken,
+      }
+    })
     commit('LogOut')
   },
-  async GetCars({commit}){
-    let response = await axios.post('api/cars')
+  async GetCars({commit, state}){
+    let response = await axios.post('api/cars', null, {
+      headers: {
+        Authorization: 'Bearer ' + state.accessToken,
+      }
+    })
     commit('setCars', response.data.cars)
   },
-  async GetDropdownValues({commit}){
-    let response = await axios.post('api/dropdown-values')
+  async GetDropdownValues({commit, state}){
+    let response = await axios.post('api/dropdown-values', null, {
+      headers: {
+        Authorization: 'Bearer ' + state.accessToken,
+      }
+    })
     commit('setManufacturers', response.data.manufacturers)
     commit('setTypes', response.data.types)
     commit('setColors', response.data.colors)
   },
-  async CreateCar({dispatch}, {car, isAddMode}) {
-    let response;
-    if (isAddMode) {
-      response = await axios.post('api/car', car)
-    } else {
-      response = await axios.put('api/car/' + car.carId, car)
+  async CreateCar({dispatch, state}, {car, isAddMode}) {
+    let response = null;
+    try {
+      if (isAddMode) {
+        response = await axios.post('api/car', car, {
+          headers: {
+            Authorization: 'Bearer ' + state.accessToken,
+          }
+        })
+      } else {
+        response = await axios.put('api/car/' + car.carId, car, {
+          headers: {
+            Authorization: 'Bearer ' + state.accessToken,
+          }
+        })
+      }
+    } catch(error) {
+      response = error.response;
     }
+    if (response.status == 200) {
+      dispatch('GetCars')
+    }
+
+    return response;
+  },
+  async DeleteCar({dispatch, state}, carId) {
+    let response = await axios.delete('api/car/' + carId, {
+      headers: {
+        Authorization: 'Bearer ' + state.accessToken,
+      }
+    })
     if (response.data.success) {
       dispatch('GetCars')
     }
   },
-  async DeleteCar({dispatch}, carId) {
-    let response = await axios.delete('api/car/' + carId)
-    if (response.data.success) {
-      dispatch('GetCars')
-    }
-  },
-  async CreateManufacturer({dispatch}, {manufacturer, isAddMode}) {
+  async CreateManufacturer({dispatch, state}, {manufacturer, isAddMode}) {
     let response;
     if (isAddMode) {
-      response = await axios.post('api/manufacturer', manufacturer)
+      response = await axios.post('api/manufacturer', manufacturer, {
+        headers: {
+          Authorization: 'Bearer ' + state.accessToken,
+        }
+      })
     } else {
-      response = await axios.put('api/manufacturer/' + manufacturer.id, manufacturer)
+      response = await axios.put('api/manufacturer/' + manufacturer.id, manufacturer, {
+        headers: {
+          Authorization: 'Bearer ' + state.accessToken,
+        }
+      })
     }
     if (response.data.success) {
       dispatch('GetDropdownValues')
     }
   },
-  async DeleteManufacturer({dispatch}, manufacturerId) {
-    let response = await axios.delete('api/manufacturer/' + manufacturerId)
+  async DeleteManufacturer({dispatch, state}, manufacturerId) {
+    let response = await axios.delete('api/manufacturer/' + manufacturerId, {
+      headers: {
+        Authorization: 'Bearer ' + state.accessToken,
+      }
+    })
     if (response.data.success) {
       dispatch('GetDropdownValues')
     }
   },
-  async CreateType({dispatch}, {type, isAddMode}) {
+  async CreateType({dispatch, state}, {type, isAddMode}) {
     let response;
     if (isAddMode) {
-      response = await axios.post('api/type', type)
+      response = await axios.post('api/type', type, {
+        headers: {
+          Authorization: 'Bearer ' + state.accessToken,
+        }
+      })
     } else {
-      response = await axios.put('api/type/' + type.id, type)
+      response = await axios.put('api/type/' + type.id, type, {
+        headers: {
+          Authorization: 'Bearer ' + state.accessToken,
+        }
+      })
     }
     if (response.data.success) {
       dispatch('GetDropdownValues')
     }
   },
-  async DeleteType({dispatch}, typeId) {
-    let response = await axios.delete('api/type/' + typeId)
+  async DeleteType({dispatch, state}, typeId) {
+    let response = await axios.delete('api/type/' + typeId, {
+      headers: {
+        Authorization: 'Bearer ' + state.accessToken,
+      }
+    })
     if (response.data.success) {
       dispatch('GetDropdownValues')
     }
   },
-  async CreateColor({dispatch}, {color, isAddMode}) {
+  async CreateColor({dispatch, state}, {color, isAddMode}) {
     let response;
     if (isAddMode) {
-      response = await axios.post('api/color', color)
+      response = await axios.post('api/color', color, {
+        headers: {
+          Authorization: 'Bearer ' + state.accessToken,
+        }
+      })
     } else {
-      response = await axios.put('api/color/' + color.id, color)
+      response = await axios.put('api/color/' + color.id, color, {
+        headers: {
+          Authorization: 'Bearer ' + state.accessToken,
+        }
+      })
     }
     if (response.data.success) {
       dispatch('GetDropdownValues')
     }
   },
-  async DeleteColor({dispatch}, colorId) {
-    let response = await axios.delete('api/color/' + colorId)
+  async DeleteColor({dispatch, state}, colorId) {
+    let response = await axios.delete('api/color/' + colorId, {
+      headers: {
+        Authorization: 'Bearer ' + state.accessToken,
+      }
+    })
     if (response.data.success) {
       dispatch('GetDropdownValues')
     }
@@ -108,6 +184,9 @@ const actions = {
 };
 
 const mutations = {
+  setAccessToken(state, accessToken) {
+    state.accessToken = accessToken
+  },
   setUser(state, user) {
     state.user = user
   },
@@ -130,6 +209,7 @@ const mutations = {
   LogOut(state) {
       state.user = null
       state.cars = null
+      state.accessToken = null;
   },
 };
 

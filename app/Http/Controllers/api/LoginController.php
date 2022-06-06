@@ -16,7 +16,7 @@ class LoginController extends Controller
   public function login(Request $request){
 
         $login = $request->validate([
-            'email' => 'required|string',
+            'email' => 'required|email',
             'password' => 'required|string'
         ]);
 
@@ -54,21 +54,23 @@ class LoginController extends Controller
 
         // $user->save();
         
-        // $token = Auth::user()->createToken('authToken');
-        // $accessToken = $token->accessToken;
-        // $expiration = $token->token;
-        // $expiration->expires_at = Carbon::now()->addMinutes(30);
-        // $expiration->save();
+        $token = Auth::user()->createToken('authToken');
+        $accessToken = $token->accessToken;
+        $expiration = $token->token;
+        $expiration->expires_at = Carbon::now()->addMinutes(30);
+        $expiration->save();
 
         return response(
                 [
-                'user' => Auth::user()
+                'user' => Auth::user(),
+                'access_token' => $accessToken
               ]);
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        $userToken = Auth::user()->token();
+        $userToken->revoke();
 
         return response()->json(
             [

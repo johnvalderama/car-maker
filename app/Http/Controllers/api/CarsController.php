@@ -17,7 +17,6 @@ class CarsController extends Controller
 {
 
   public function getCars(Request $request){
-
     $cars = DB::table('cars')
               ->join('car_manufacturers', 'cars.manufacturer_id', '=', 'car_manufacturers.id')
               ->join('car_types', 'cars.type_id', '=', 'car_types.id')
@@ -47,6 +46,27 @@ class CarsController extends Controller
   }
 
   public function createCar(Request $request){
+
+    $validator = Validator::make($request->all(),[
+      'carName' => 'required|string',
+      'carManufacturerId' => 'required',
+      'carTypeId' => 'required',
+      'carColorId' => 'required'
+    ]);
+
+    if ($validator->fails()) {
+      $error_array = array();
+      foreach ($validator->messages()->getMessages() as $field_name => $messages) {
+          $error_array[$field_name] = $messages;
+      }
+      return response()->json(
+          [
+              'name' => 'cars',
+              'response' => 400,
+              'success' => false,
+              'errors' => $error_array
+          ], 400);
+    }
 
     $carManufacturers = CarManufacturer::all();
     $carTypes = CarType::all();
@@ -80,6 +100,27 @@ class CarsController extends Controller
   }
 
   public function updateCar($id, Request $request){
+
+    $validator = Validator::make($request->all(),[
+      'carName' => 'required|string',
+      'carManufacturerId' => 'required',
+      'carTypeId' => 'required',
+      'carColorId' => 'required'
+    ]);
+
+    if ($validator->fails()) {
+      $error_array = array();
+      foreach ($validator->messages()->getMessages() as $field_name => $messages) {
+          $error_array[$field_name] = $messages;
+      }
+      return response()->json(
+          [
+              'name' => 'cars',
+              'response' => 400,
+              'success' => false,
+              'errors' => $error_array
+          ], 400);
+    }
 
     $car = Car::where('id', $id)->get()->first();
     $car->name = $request->input('carName');
